@@ -1,6 +1,6 @@
 """White Elephant bot."""
 
-import discord
+from discord import Intents
 from discord.ext.commands import Bot
 
 from .game import Game
@@ -12,7 +12,7 @@ class GiftBot(Bot):
         super().__init__(
             "NOPREFIX",
             help_command=None,
-            intents=discord.Intents.default())
+            intents=Intents.default())
         
         self.games = dict[int, Game]()
 

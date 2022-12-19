@@ -1,6 +1,6 @@
 """Commands for the bot."""
 
-import asyncio
+from asyncio import sleep
 from random import shuffle
 
 import discord
@@ -188,7 +188,7 @@ class GiftCommandGroup(discord.app_commands.Group):
             f"You unwrapped gift number {number}:",
             embed=gift.embed)
 
-        await asyncio.sleep(3)
+        await sleep(3)
 
         try:
             game.active_user = next(game.turns)
@@ -263,7 +263,7 @@ class GiftCommandGroup(discord.app_commands.Group):
             user_gift = discord.utils.find(lambda g: g.holder == interaction.user, game.gifts)
             user_gift.holder, gift.holder = gift.holder, user_gift.holder
 
-            await asyncio.sleep(3)
+            await sleep(3)
 
             # FIXME add summary embed.
 
@@ -273,7 +273,7 @@ class GiftCommandGroup(discord.app_commands.Group):
         await interaction.response.send_message(
             f"You stole gift {number} from {gift.holder.mention}!")
 
-        await asyncio.sleep(3)
+        await sleep(3)
 
         await interaction.channel.send(
             f"{gift.holder.mention}, you can either steal or open a gift!",
@@ -339,7 +339,7 @@ async def setup(bot: "GiftBot"):
         await reaction.message.channel.send(
             f"{user.mention} chose to end the game. The game is now over!")
 
-        await asyncio.sleep(3)
+        await sleep(3)
 
         # FIXME add summary embed.
         game.stage = GameStage.end
