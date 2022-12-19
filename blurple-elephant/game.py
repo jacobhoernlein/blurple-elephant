@@ -35,8 +35,8 @@ class Gift:
                 description = f"\"*{self.gift_description}*\"\n\nThis gift has ONE steal left! "
             case 2:
                 description = f"\"*{self.gift_description}*\"\n\nThis gift has TWO steals left! "
-            case 3:
-                description = f"\"*{self.gift_description}*\""
+            case _:
+                description = f"Box Description: \"*{self.box_description}*\"\nGift Description: \"*{self.gift_description}*\""
 
         if self.status < 3:
             description += f"It is Currently held by {self.holder.mention}, and it was brought by {self.buyer.mention}."

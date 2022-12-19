@@ -23,7 +23,7 @@ class GameCommandGroup(discord.app_commands.Group):
         description="Create a new game in the current channel.")
     async def game_create(self, interaction: discord.Interaction):
         
-        if interaction.channel_id in self.bot.games.keys():
+        if interaction.channel_id in self.bot.games:
             await interaction.response.send_message(
                 "There is already a game in this channel!",
                 ephemeral=True)
@@ -32,8 +32,7 @@ class GameCommandGroup(discord.app_commands.Group):
         self.bot.games[interaction.channel_id] = Game()
 
         await interaction.response.send_message(
-            "Game created. 👍",
-            ephemeral=True)
+            "A new game has been created! If you wish to play, do `/gift add`.")
 
     @discord.app_commands.command(
         name="start",
@@ -65,13 +64,24 @@ class GameCommandGroup(discord.app_commands.Group):
 
         game.stage = GameStage.play
 
+        embed = discord.Embed(
+            color=discord.Color.blurple(),
+            title="Game Order:",
+            description="")
+
+        for user in users:
+            embed.description += f"• {user.mention}\n"
+
         await interaction.response.send_message(
-            "Game started. 👍",
-            ephemeral=True)
+            f"The game has begun! The order is as follows:",
+            embed=embed)
+
+        await sleep(3)
 
         await interaction.channel.send(
-            f"The game has begun! {game.active_user.mention}, you can either steal or open a gift!",
+            f"{game.active_user.mention}, you're first! Choose a gift to open.",
             embed=game.embed)
+
 
     @discord.app_commands.command(
         name="delete",
@@ -86,9 +96,7 @@ class GameCommandGroup(discord.app_commands.Group):
                 ephemeral=True)
             return
 
-        await interaction.response.send_message(
-                "Deleted this channel's game!",
-                ephemeral=True)
+        await interaction.response.send_message("Deleted this channel's game!")
             
 
 class GiftCommandGroup(discord.app_commands.Group):
@@ -103,9 +111,13 @@ class GiftCommandGroup(discord.app_commands.Group):
     @discord.app_commands.command(
         name="add",
         description="Add a gift to the game.")
+    @discord.app_commands.describe(
+        box_description="What the box looks like. Ex: \"A big red box with a blue bow.\"",
+        gift_description="What the gift actually is. Ex: \"A lamp shaped like a leg.\"",
+        image_link="A link to an image of your gift.")
     async def gift_add(
             self, interaction: discord.Interaction,
-            box_description: str, description: str,
+            box_description: str, gift_description: str,
             image_link: str = ""):
 
         try:
@@ -123,17 +135,18 @@ class GiftCommandGroup(discord.app_commands.Group):
             return
 
         if interaction.user in [gift.buyer for gift in game.gifts]:
-            await interaction.response.send_message(
-                "You already have a gift in the game!",
-                ephemeral=True)
-            return
+            gift = discord.utils.find(lambda g: g.buyer == interaction.user, game.gifts)
+            
+            gift.box_description = box_description
+            gift.gift_description = gift_description
+            gift.image_link = image_link
+        else:
+            gift = Gift(
+                interaction.user, interaction.user,
+                box_description, gift_description,
+                image_link, 3)
 
-        gift = Gift(
-            interaction.user, interaction.user,
-            box_description, description,
-            image_link, 3)
-
-        game.gifts.append(gift)
+            game.gifts.append(gift)
 
         await interaction.response.send_message(
             "Gift added!",
@@ -199,7 +212,7 @@ class GiftCommandGroup(discord.app_commands.Group):
             game.stage = GameStage.last
         else:
             await interaction.channel.send(
-                f"{game.active_user.mention}, you can either steal or open a gift!",
+                f"{game.active_user.mention}, it's your turn! You can either steal or open a gift.",
                 embed=game.embed)
 
     @discord.app_commands.command(
@@ -265,7 +278,9 @@ class GiftCommandGroup(discord.app_commands.Group):
 
             await sleep(3)
 
-            # FIXME add summary embed.
+            await interaction.channel.send(
+                "The results of the game are as follows:",
+                embed=game.embed)
 
             game.stage = GameStage.end
             return
@@ -337,9 +352,7 @@ async def setup(bot: "GiftBot"):
             return
 
         await reaction.message.channel.send(
-            f"{user.mention} chose to end the game. The game is now over!")
+            f"{user.mention} chose to end the game. The game is now over! The results are below:",
+            embed = game.embed)
 
-        await sleep(3)
-
-        # FIXME add summary embed.
         game.stage = GameStage.end
