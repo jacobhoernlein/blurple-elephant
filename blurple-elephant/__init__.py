@@ -1,2 +1,2 @@
 from .bot import GiftBot
-from .game import Game
+from .game import Gift, Game

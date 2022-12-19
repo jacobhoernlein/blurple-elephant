@@ -82,7 +82,6 @@ class GameCommandGroup(discord.app_commands.Group):
             f"{game.active_user.mention}, you're first! Choose a gift to open.",
             embed=game.embed)
 
-
     @discord.app_commands.command(
         name="delete",
         description="Delete the game in the current channel.")

@@ -28,22 +28,21 @@ class Gift:
     @property
     def embed(self):
         
+        embed=discord.Embed(
+            color=discord.Color.blurple(),
+            description=f"\"*{self.gift_description}*\"")
+
         match self.status:
             case 0:
-                description = f"\"*{self.gift_description}*\"\n\nThis gift is LOCKED🔒! "
+                footer = f"🔒 LOCKED • Won by {self.holder}"
             case 1:
-                description = f"\"*{self.gift_description}*\"\n\nThis gift has ONE steal left! "
+                footer = f"1️⃣ Steal Left • Held by {self.holder}"
             case 2:
-                description = f"\"*{self.gift_description}*\"\n\nThis gift has TWO steals left! "
+                footer = f"2️⃣ Steals Left • Held by {self.holder}"
             case _:
-                description = f"Box Description: \"*{self.box_description}*\"\nGift Description: \"*{self.gift_description}*\""
+                footer = f"🎁 Box Description: \"{self.box_description}\""
 
-        if self.status < 3:
-            description += f"It is Currently held by {self.holder.mention}, and it was brought by {self.buyer.mention}."
-
-        embed = discord.Embed(
-            color=discord.Color.blurple(), 
-            description=description)
+        embed.set_footer(text=footer)
 
         if self.image_link:
             embed.set_image(url=self.image_link)
