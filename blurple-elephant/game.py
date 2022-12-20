@@ -26,6 +26,18 @@ class Gift:
     status: int
    
     @property
+    def description(self):
+        match self.status:
+            case 0:
+                return f'🔒 "*{self.gift_description}*"'
+            case 1:
+                return f'1️⃣ "*{self.gift_description}*"'
+            case 2:
+                return f'2️⃣ "*{self.gift_description}*"'
+            case _:
+                return f'🎁 "*{self.box_description}*"'
+
+    @property
     def embed(self):
         
         embed=discord.Embed(
@@ -68,22 +80,7 @@ class Game:
             description="")
 
         for i, gift in enumerate(self.gifts):
-            
-            match gift.status:
-                case 0:
-                    emoji = "🔒"
-                    description = gift.gift_description
-                case 1:
-                    emoji = "1️⃣"
-                    description = gift.gift_description
-                case 2:
-                    emoji = "2️⃣"
-                    description = gift.gift_description
-                case _:
-                    emoji = "🎁"
-                    description = gift.box_description
-
-            embed.description += f"**{i + 1})** {emoji} \"*{description}*\""
+            embed.description += f"**{i + 1})** {gift.description}"
             if gift.status < 3:
                 embed.description += f" - {gift.holder.mention}"
             embed.description += "\n"

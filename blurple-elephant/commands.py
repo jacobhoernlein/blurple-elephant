@@ -35,6 +35,33 @@ class GameCommandGroup(discord.app_commands.Group):
             "A new game has been created! If you wish to play, do `/gift add`.")
 
     @discord.app_commands.command(
+        name="list",
+        description="List the users who have entered a gift.")
+    async def game_list(self, interaction: discord.Interaction):
+
+        try:
+            game = self.bot.games[interaction.channel_id]
+        except KeyError:
+            await interaction.response.send_message(
+                "There is no game in this channel!",
+                ephemeral=True)
+            return
+
+        description = "".join([
+            f"**{i + 1})** {gift.buyer.mention} - {gift.description}\n"
+            for i, gift in enumerate(game.gifts)])
+
+        embed = discord.Embed(
+            color=discord.Color.blurple(),
+            title="Game Participants:",
+            description=description)
+
+        await interaction.response.send_message(
+            f"The following have a gift in the game:",
+            embed=embed,
+            ephemeral=True)
+
+    @discord.app_commands.command(
         name="start",
         description="Start the game in the current channel.")
     async def game_start(self, interaction: discord.Interaction):
@@ -59,22 +86,25 @@ class GameCommandGroup(discord.app_commands.Group):
         shuffle(users)
         game.turns = iter(users)
 
-        game.first_player = next(game.turns)
-        game.active_user = game.first_player
-
-        game.stage = GameStage.play
+        try:
+            game.first_player = next(game.turns)
+        except StopIteration:
+            await interaction.response.send_message(
+                "No users have entered the game!",
+                ephemeral=True)
+            return
 
         embed = discord.Embed(
             color=discord.Color.blurple(),
             title="Game Order:",
-            description="")
-
-        for user in users:
-            embed.description += f"• {user.mention}\n"
+            description="".join([f"• {user.mention}\n" for user in users]))
 
         await interaction.response.send_message(
             f"The game has begun! The order is as follows:",
             embed=embed)
+
+        game.stage = GameStage.play
+        game.active_user = game.first_player
 
         await sleep(3)
 
@@ -133,13 +163,11 @@ class GiftCommandGroup(discord.app_commands.Group):
                 ephemeral=True)
             return
 
-        if interaction.user in [gift.buyer for gift in game.gifts]:
-            gift = discord.utils.find(lambda g: g.buyer == interaction.user, game.gifts)
-            
-            gift.box_description = box_description
-            gift.gift_description = gift_description
-            gift.image_link = image_link
-        else:
+        gift = discord.utils.find(
+            lambda g: g.buyer == interaction.user,
+            game.gifts)
+
+        if gift is None:
             gift = Gift(
                 interaction.user, interaction.user,
                 box_description, gift_description,
@@ -147,10 +175,52 @@ class GiftCommandGroup(discord.app_commands.Group):
 
             game.gifts.append(gift)
 
-        await interaction.response.send_message(
-            "Gift added!",
-            embed=gift.embed,
-            ephemeral=True)  
+            await interaction.response.send_message(
+                "Gift added!",
+                embed=gift.embed,
+                ephemeral=True)  
+        else:
+            gift.box_description = box_description
+            gift.gift_description = gift_description
+            gift.image_link = image_link
+
+            await interaction.response.send_message(
+                "Gift updated!",
+                embed=gift.embed,
+                ephemeral=True)  
+
+    @discord.app_commands.command(
+        name="remove",
+        description="Remove your gift from the game if you wish not to play anymore.")
+    async def gift_remove(self, interaction: discord.Interaction):
+
+        try:
+            game = self.bot.games[interaction.channel_id]
+        except KeyError:
+            await interaction.response.send_message(
+                "There is no game in this channel!",
+                ephemeral=True)
+            return
+
+        if game.stage != GameStage.prep:
+            await interaction.response.send_message(
+                "The game has already started!",
+                ephemeral=True)
+            return
+
+        gift = discord.utils.find(
+            lambda g: g.buyer == interaction.user,
+            game.gifts)
+
+        if gift is None:
+            await interaction.response.send_message(
+                "You don't have a gift to remove!",
+                ephemeral=True)
+        else:
+            game.gifts.remove(gift)
+            await interaction.response.send_message(
+                "Removed your gift. 👍",
+                ephemeral=True)
 
     @discord.app_commands.command(
         name="open",
