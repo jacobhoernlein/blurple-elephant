@@ -359,13 +359,15 @@ class GiftCommandGroup(discord.app_commands.Group):
 
         await sleep(3)
 
+        prev_owner = gift.holder
+        gift.status -= 1
+        gift.holder = interaction.user
+
         await interaction.channel.send(
-            f"{gift.holder.mention}, you can either steal or open a gift!",
+            f"{prev_owner.mention}, you can either steal or open a gift!",
             embed=game.embed)
 
-        gift.status -= 1
-        game.active_user = gift.holder
-        gift.holder = interaction.user
+        game.active_user = prev_owner
 
     @discord.app_commands.command(
         name="inspect",
